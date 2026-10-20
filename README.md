@@ -16,6 +16,10 @@ you link an activity, say “View on Strava”.
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
+**Install and attach:** follow **[INSTALL.md](INSTALL.md)** (clone or `uvx` on
+the GrokBot cloud computer, put client id/secret on the computer, `strava-mcp
+auth --stdio` with Take over, then add a custom stdio **command** in chat).
+
 ## What GrokBot users do
 
 Do **not** use GrokBot’s Add-connector / Plugins marketplace. That catalog is
