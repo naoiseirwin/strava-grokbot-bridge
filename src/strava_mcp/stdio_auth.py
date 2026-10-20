@@ -10,7 +10,7 @@ from dotenv import set_key
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from .env import get_env_file_path, get_env_files
+from .env import get_env_file_path, get_env_files, restrict_env_file_permissions
 from .models import TokenResponse
 
 
@@ -102,6 +102,7 @@ def _update_env_tokens(access_token: str, refresh_token: str) -> None:
     # Update tokens in the selected env file.
     set_key(str(env_path), "STRAVA_ACCESS_TOKEN", access_token)
     set_key(str(env_path), "STRAVA_REFRESH_TOKEN", refresh_token)
+    restrict_env_file_permissions(env_path)
 
     # Also update environment variables for current process
     os.environ["STRAVA_ACCESS_TOKEN"] = access_token

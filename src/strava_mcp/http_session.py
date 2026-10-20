@@ -30,18 +30,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .env import get_env_files
 from .models import TokenResponse
+from .scopes import DEFAULT_STRAVA_SCOPES
 
 # Type aliases for OAuth provider
 ProviderAccessToken = OAuthAccessToken
 ProviderRefreshToken = OAuthRefreshToken
 
-# Constants for HTTP mode session management
-DEFAULT_STRAVA_SCOPES = [
-    "profile:read_all",
-    "activity:read_all",
-    "activity:read",
-    "profile:write",
-]
+# Constants for HTTP mode session management (read-only in this fork).
 
 DEFAULT_REGISTERED_CLIENTS = {
     "chatgpt": ["https://mcp.openai.com/v1/oauth/callback"],

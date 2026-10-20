@@ -1,389 +1,145 @@
-# Strava MCP Server
+# strava-grokbot-bridge
 
-![Strava MCP Server](docs/heading.png)
+Read-only [Strava](https://www.strava.com/) MCP for **GrokBot**. Each user runs
+this on **their own GrokBot cloud computer**. The Bot starts it as a **stdio
+command**. There is no public host, no ngrok, and no marketplace tile.
 
-A Model Context Protocol (MCP) server for Strava integration. Access your activities, athlete stats, segments, and routes through Claude, ChatGPT, and other LLMs.
+Fork of [eddmann/strava-mcp](https://github.com/eddmann/strava-mcp) (MIT,
+© 2025 Edd Mann), pinned at
+[`2c6fa6991ffa2c4a443887728aaf8eaab5829cea`](https://github.com/eddmann/strava-mcp/commit/2c6fa6991ffa2c4a443887728aaf8eaab5829cea).
+See [UPSTREAM.md](UPSTREAM.md).
+
+**Compatible with Strava.** This project is not affiliated with, endorsed by,
+or sponsored by Strava, Inc. Do not name your API app anything that implies an
+official Strava product (use something like “GrokBot Activity Bridge”). When
+you link an activity, say “View on Strava”.
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![PyPI](https://img.shields.io/pypi/v/mcp-strava.svg)](https://pypi.org/project/mcp-strava/)
-[![Docker](https://img.shields.io/badge/docker-ghcr.io-blue.svg)](https://github.com/eddmann/strava-mcp/pkgs/container/strava-mcp)
 
-## Overview
+## What GrokBot users do
 
-This MCP server provides 11 tools to interact with your Strava account, organized into 5 categories:
+Do **not** use GrokBot’s Add-connector / Plugins marketplace. That catalog is
+Gmail, Notion, and similar tiles. Strava is not there, and this fork is not a
+URL connector.
 
-- Activities (2 tools) - Query and analyze your Strava activities
-- Athlete (1 tool) - Access profile, statistics, and training zones
-- Segments (3 tools) - Explore and track segment efforts
-- Routes (2 tools) - Manage and export routes
-- Analysis (3 tools) - Training insights, comparison, and similarity search
+Do **not** paste Strava access tokens, refresh tokens, or client secrets into
+chat.
 
-Additionally, the server provides:
+### 1. Create your own Strava API app
 
-- 1 MCP Resource - Athlete profile with stats and zones for ongoing context
-- 6 MCP Prompts - Templates for common queries (training analysis, segment performance, activity analysis, run comparison, training summary, race performance)
+1. Open [strava.com/settings/api](https://www.strava.com/settings/api)
+2. Create an application (this currently requires a Strava subscription)
+3. Authorization Callback Domain: `localhost`
+4. Website can be `http://localhost`
+5. Keep the client id and secret on the computer — not in chat
 
-**Deployment Options:**
+New apps start in single-player mode (only you can authorize). That is enough
+if you own the app.
 
-- **Stdio Mode**: Single-user local deployment (e.g., Claude Desktop, Cursor)
-- **HTTP Mode**: Multi-user deployment (e.g., ChatGPT, remote MCP deployment)
+### 2. Install on the GrokBot computer
 
-## Prerequisites
-
-- [uv](https://github.com/astral-sh/uv) (the package requires Python 3.11+, which uv can manage), OR
-- Docker
-
-## Strava API Application Setup
-
-Before installation, you need to create a Strava API application:
-
-1. Go to https://www.strava.com/settings/api
-2. Create a new application with the following settings:
-   - Application Name: Your choice (e.g., "My Strava MCP")
-   - Category: Your choice (e.g., "Data Importer")
-   - Club: Leave blank (optional)
-   - Website: Can be anything (e.g., `http://localhost`)
-   - **Authorization Callback Domain: Must be `localhost`**
-3. After creation, note your Client ID and Client Secret
-4. You'll use these credentials during the setup process below
-
-## Installation & Setup
-
-### How Authentication Works
-
-#### Stdio Mode (single-user, pre-configured)
-
-1. OAuth Flow - One-time authorization through browser
-2. Token Storage - OAuth tokens saved to `~/.strava-mcp.env` by default, or a local `.env` file when one exists
-3. Auto-Refresh - Tokens automatically refreshed when expired
-4. Persistence - Subsequent runs reuse stored tokens
-
-#### HTTP Mode (multi-user, on-demand)
-
-1. OAuth Flow - Per-user authorization on first connection (MCP OAuth → Strava OAuth)
-2. Token Storage - OAuth tokens stored in session store (in-memory or DynamoDB)
-3. Auto-Refresh - Tokens refreshed automatically per-session
-4. Persistence - Sessions expire after 12 hours (configurable)
-
-### Option 1: Using uvx
+Ask the Bot to clone this repo onto the computer:
 
 ```bash
-uvx mcp-strava auth
+git clone https://github.com/naoiseirwin/strava-grokbot-bridge.git /workspace/strava-grokbot-bridge
 ```
 
-This interactive wizard will guide you through configuring authentication for stdio or
-http transport modes. It writes configuration to `~/.strava-mcp.env` by default.
+Requires [uv](https://github.com/astral-sh/uv).
 
-If you prefer source checkout development, see "Using Local Source" below.
+### 3. Authorize on the computer (Take over)
 
-For manual stdio configuration, create `~/.strava-mcp.env` with your Strava OAuth app
-credentials and tokens.
-
-### Option 2: Using Docker
+Put `STRAVA_CLIENT_ID` and `STRAVA_CLIENT_SECRET` on the computer with a GrokBot
+secret-request, or write them into `/workspace/.strava-mcp.env`. Then:
 
 ```bash
-# Pull the image
-docker pull ghcr.io/eddmann/strava-mcp:latest
+uv run --directory /workspace/strava-grokbot-bridge strava-mcp auth --stdio
 ```
 
-Then configure credentials:
+A browser on **this computer** opens Strava’s consent screen. If you need a
+password, passkey, or 2FA, use **Take over**. Do not paste the redirect URL
+into chat.
+
+Tokens are stored at `/workspace/.strava-mcp.env` (mode `600`). Access tokens
+last about six hours; the server refreshes them. All Bots on your Cursor
+account share this computer, so they can all read that file.
+
+Scopes (read-only): `profile:read_all`, `activity:read_all`, `activity:read`.
+
+### 4. Attach the stdio command
+
+In GrokBot chat, send:
+
+> Add a custom MCP server called strava that runs: `uv run --directory /workspace/strava-grokbot-bridge strava-mcp`
+
+The Bot should repeat the name, command, and args. Click **Add it**.
+
+`uvx` form (same computer, no checkout required after git is public):
+
+> Add a custom MCP server called strava that runs: `uvx --from git+https://github.com/naoiseirwin/strava-grokbot-bridge strava-mcp`
+
+### 5. Use it
+
+Type `@` and attach `strava`. Then:
+
+- “What’s my athlete profile?”
+- “Show my runs from the last 30 days”
+
+Those call `get_athlete_profile` and `query_activities`.
+
+GrokBot skill the Bot can follow: [skills/grokbot-strava/SKILL.md](skills/grokbot-strava/SKILL.md).
+
+## Tools
+
+| Tool | Description |
+| --- | --- |
+| `query_activities` | Query activities with filters and optional laps/zones/streams |
+| `get_activity_social` | Comments and kudos |
+| `get_athlete_profile` | Profile, optional stats and zones |
+| `query_segments` | Segment by id, starred list, or explore bounds |
+| `get_segment_leaderboard` | Segment leaderboard |
+| `query_routes` | Route by id or list |
+| `export_route` | Export GPX/TCX |
+| `analyze_training` | Training summary over a period |
+| `compare_activities` | Side-by-side compare |
+| `find_similar_activities` | Similar efforts |
+
+`star_segment` is not registered. This fork does not request `profile:write`.
+
+Resource: `strava://athlete/profile`. Prompts: `analyze_recent_training`,
+`segment_performance`, `activity_deep_dive`, `compare_recent_runs`,
+`training_summary`, `race_performance_analysis`.
+
+## Token file
+
+| Place | Path |
+| --- | --- |
+| GrokBot computer (default) | `/workspace/.strava-mcp.env` |
+| Override | `STRAVA_MCP_ENV_FILE` |
+| Desktop fallback | `~/.strava-mcp.env` |
+| Local checkout if `.env` exists | `./.env` |
+
+See [SECURITY.md](SECURITY.md) to revoke (Strava → Settings → My Apps).
+
+## Not the product
+
+HTTP / Streamable HTTP, Lambda, DynamoDB, Docker, and ngrok remain in the tree
+because they came from upstream. They are **not** how GrokBot users attach this
+server. Cursor’s connector backend cannot reach `localhost` on your laptop, and
+this project does not stand up a public URL.
+
+Do not `uvx mcp-strava` from PyPI — that is upstream, not this fork.
+
+## Development
 
 ```bash
-# Create the env file first (Docker will create it as a directory if it doesn't exist)
-touch strava-mcp.env
-
-# Run the setup script
-docker run -it --rm \
-  -v "/ABSOLUTE/PATH/TO/strava-mcp.env:/app/.env" \
-  ghcr.io/eddmann/strava-mcp:latest \
-  auth
+uv sync --extra http
+make test
+make lint
 ```
 
-This interactive wizard will guide you through configuring authentication for stdio or http transport modes.
-
-### Required OAuth Scopes
-
-The authentication process requests these scopes:
-
-- `profile:read_all` - Read athlete profile and zones
-- `activity:read_all` - Read all activity data
-- `activity:read` - Read activity summaries
-- `profile:write` - Star/unstar segments
-
-## Transport Modes
-
-The server supports two transport modes selected via `--transport` flag (stdio is default, no flag needed):
-
-### Stdio Mode (Default)
-
-Uses standard input/output for communication with a single pre-configured Strava account.
-
-- Authentication: Pre-configured OAuth tokens in `~/.strava-mcp.env` or a local `.env` file
-- Users: Single user per deployment
-- Setup: Run `strava-mcp auth` to authorize once
-- Token Storage: `~/.strava-mcp.env` by default, with local `.env` overrides for development and Docker
-
-### HTTP Mode (Streamable HTTP)
-
-Uses HTTP transport with per-user OAuth flow.
-
-- Authentication: OAuth flow per user (MCP OAuth → Strava OAuth)
-- Users: Multi-user support with separate sessions
-- Setup: Environment-based configuration
-- Token Storage: In-memory or DynamoDB session store
-
-## Claude Desktop Configuration
-
-Add to your configuration file:
-
-- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-
-### Using uvx
-
-After running `uvx mcp-strava auth`, configure Claude Desktop to start the published
-package:
-
-```json
-{
-  "mcpServers": {
-    "strava": {
-      "command": "uvx",
-      "args": ["mcp-strava"]
-    }
-  }
-}
-```
-
-### Using Local Source
-
-For development, run from a local checkout:
-
-```bash
-cd strava-mcp
-make deps
-uv run strava-mcp auth
-```
-
-```json
-{
-  "mcpServers": {
-    "strava": {
-      "command": "uv",
-      "args": [
-        "run",
-        "--directory",
-        "/ABSOLUTE/PATH/TO/strava-mcp",
-        "strava-mcp",
-        "--transport",
-        "stdio"
-      ]
-    }
-  }
-}
-```
-
-### Using Docker
-
-```json
-{
-  "mcpServers": {
-    "strava": {
-      "command": "docker",
-      "args": [
-        "run",
-        "-i",
-        "--rm",
-        "-v",
-        "/ABSOLUTE/PATH/TO/strava-mcp.env:/app/.env",
-        "ghcr.io/eddmann/strava-mcp:latest",
-        "--transport",
-        "stdio"
-      ]
-    }
-  }
-}
-```
-
-## ChatGPT Integration & HTTP Mode
-
-### Running in HTTP Mode
-
-Start the server in HTTP mode for remote deployments:
-
-```bash
-# Using uvx
-uvx --from "mcp-strava[http]" mcp-strava --transport http
-
-# Using local source
-cd /ABSOLUTE/PATH/TO/strava-mcp
-make deps
-uv run strava-mcp --transport http
-
-# Using Docker
-docker run -p 8000:8000 --rm \
-  -v "/ABSOLUTE/PATH/TO/strava-mcp.env:/app/.env" \
-  ghcr.io/eddmann/strava-mcp:latest \
-  --transport http
-```
-
-Environment variables can be configured using `uvx mcp-strava auth`, or `strava-mcp auth` from a local checkout or Docker image.
-
-### Local Development with ngrok
-
-To test ChatGPT integration locally:
-
-1. **Start the server in HTTP mode**:
-
-   ```bash
-   uv run strava-mcp --transport http
-   ```
-
-2. **In a separate terminal, expose via ngrok**:
-
-   ```bash
-   ngrok http 8000
-   ```
-
-3. **Update environment**: Set `STRAVA_MCP_BASE_URL` to your ngrok URL:
-
-   ```bash
-   export STRAVA_MCP_BASE_URL=https://abc123.ngrok.io
-   ```
-
-   Or add to your `.env` file:
-
-   ```
-   STRAVA_MCP_BASE_URL=https://abc123.ngrok.io
-   ```
-
-4. **Restart the server** to pick up the new base URL
-
-5. **Configure ChatGPT**: Use the ngrok URL (with `/mcp` path) as your MCP server endpoint
-
-## Usage
-
-Ask Claude to interact with your Strava data using natural language. The server provides tools, a resource, and prompt templates to help you get started.
-
-### Quick Start with MCP Prompts
-
-Use built-in prompt templates for common queries (available via prompt suggestions in Claude):
-
-- `analyze_recent_training` - Analyze my training over the past 30 days
-- `segment_performance` - Analyze my performance on a specific segment
-- `activity_deep_dive` - Deep dive into a specific activity
-- `compare_recent_runs` - Compare my recent runs to track progress
-- `training_summary` - Show me a comprehensive training summary
-- `race_performance_analysis` - Analyze race performance for a specific distance
-
-### Activities
-
-```
-"Show me my runs from the last 30 days"
-"Get my last long run with lap splits and heart rate zones"
-"Show me the comments and kudos on my half marathon race"
-"Find all my marathon races from this year"
-"Show me all 10km runs from the last 90 days"
-```
-
-### Athlete Profile & Stats
-
-```
-"Show my athlete profile with year-to-date stats and training zones"
-```
-
-_Note: The athlete profile resource (`strava://athlete/profile`) automatically provides ongoing context._
-
-### Segments
-
-```
-"Show me the Box Hill segment with my effort history"
-"Find running segments near Hyde Park"
-"Show the leaderboard for my favorite climb segment"
-```
-
-### Routes
-
-```
-"List my routes"
-"Export my Richmond Park route to GPX"
-```
-
-### Training Analysis
-
-```
-"Analyze my training over the past 30 days"
-"Analyze my marathon race performance this year"
-"Compare my last three 10K runs"
-"Find runs similar to my last tempo workout"
-"Show me all my 5k races from the last year"
-```
-
-_Note: List-returning tools use cursor-based pagination with default limits (10 items for activities/segments/routes, 50 for leaderboards)._
-
-## Available Tools
-
-### Activities (2 tools)
-
-| Tool                  | Description                                                                                                               |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `query_activities`    | Unified query for activities with filtering (distance, title, race status) and optional enrichment (laps, zones, streams) |
-| `get_activity_social` | Get comments and kudos for an activity                                                                                    |
-
-### Athlete (1 tool)
-
-| Tool                  | Description                                                                             |
-| --------------------- | --------------------------------------------------------------------------------------- |
-| `get_athlete_profile` | Get athlete profile with optional statistics (recent, YTD, all-time) and training zones |
-
-### Segments (3 tools)
-
-| Tool                      | Description                                                             |
-| ------------------------- | ----------------------------------------------------------------------- |
-| `query_segments`          | Unified segment query (by ID, starred, or explore by geographic bounds) |
-| `star_segment`            | Star or unstar a segment                                                |
-| `get_segment_leaderboard` | Get segment leaderboard with filtering options                          |
-
-### Routes (2 tools)
-
-| Tool           | Description                                               |
-| -------------- | --------------------------------------------------------- |
-| `query_routes` | Get route details (single route by ID or list all routes) |
-| `export_route` | Export a route to GPX or TCX format                       |
-
-### Analysis (3 tools)
-
-| Tool                      | Description                                                                                              |
-| ------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `analyze_training`        | Analyze training over a time period with filtering (distance, title, race status) and aggregated metrics |
-| `compare_activities`      | Compare 2-5 activities side-by-side                                                                      |
-| `find_similar_activities` | Find activities similar to a reference activity with pre-filtering options for progress tracking         |
-
-## MCP Resources
-
-Resources provide ongoing context to the LLM without requiring explicit tool calls:
-
-| Resource                   | Description                                                 |
-| -------------------------- | ----------------------------------------------------------- |
-| `strava://athlete/profile` | Complete athlete profile with recent stats, zones, and gear |
-
-## MCP Prompts
-
-Prompt templates for common queries (accessible via prompt suggestion in Claude):
-
-| Prompt                      | Description                                             |
-| --------------------------- | ------------------------------------------------------- |
-| `analyze_recent_training`   | Comprehensive training analysis over a specified period |
-| `race_performance_analysis` | Analyze race performance for a specific distance        |
-| `segment_performance`       | Detailed segment performance analysis                   |
-| `activity_deep_dive`        | Deep dive into a specific activity with all metrics     |
-| `compare_recent_runs`       | Compare recent runs to identify trends and improvements |
-| `training_summary`          | Comprehensive training overview with recommendations    |
+Tests are mocked. They do not call the live Strava API.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details
-
-## Disclaimer
-
-This project is not affiliated with, endorsed by, or sponsored by Strava, Inc. All product names, logos, and brands are property of their respective owners.
+MIT. Copyright (c) 2025 Edd Mann. Fork modifications Copyright (c) 2026
+Naoise Irwin. See [LICENSE](LICENSE).

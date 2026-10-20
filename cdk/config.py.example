@@ -15,7 +15,7 @@ LAMBDA_ENV_OVERRIDES: Dict[str, str] = {
     "STRAVA_CLIENT_ID": "your-strava-client-id",
     "STRAVA_CLIENT_SECRET": "your-strava-client-secret",
     # Comma-separated list of scopes the MCP should request
-    "STRAVA_OAUTH_SCOPES": "profile:read_all,activity:read_all,activity:read,profile:write",
+    "STRAVA_OAUTH_SCOPES": "profile:read_all,activity:read_all,activity:read",
     # Optional preferences (match existing local configuration)
     "STRAVA_MEASUREMENT_PREFERENCE": "meters",
     # NOTE: Route exports are not currently supported in Lambda deployments for remote access.

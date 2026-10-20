@@ -6,10 +6,10 @@ import os
 from dotenv import load_dotenv
 from fastmcp import Context, FastMCP
 
-from .env import DEFAULT_ENV_FILE, LOCAL_ENV_FILE
+from .env import LOCAL_ENV_FILE, get_persistent_env_file
 
 # Load environment variables
-load_dotenv(DEFAULT_ENV_FILE)
+load_dotenv(get_persistent_env_file())
 load_dotenv(LOCAL_ENV_FILE, override=True)
 
 
@@ -87,7 +87,7 @@ def create_server(transport_mode: str = "stdio") -> FastMCP:
     from .tools.analysis import analyze_training, compare_activities, find_similar_activities
     from .tools.athlete import get_athlete_profile
     from .tools.routes import export_route, query_routes
-    from .tools.segments import get_segment_leaderboard, query_segments, star_segment
+    from .tools.segments import get_segment_leaderboard, query_segments
 
     # Register activity tools
     mcp.tool(
@@ -118,13 +118,6 @@ def create_server(transport_mode: str = "stdio") -> FastMCP:
             "openWorldHint": False,
         }
     )(query_segments)
-    mcp.tool(
-        annotations={
-            "readOnlyHint": False,
-            "openWorldHint": False,
-            "destructiveHint": False,
-        }
-    )(star_segment)
     mcp.tool(
         annotations={
             "readOnlyHint": True,

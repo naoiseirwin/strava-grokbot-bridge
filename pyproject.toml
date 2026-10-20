@@ -1,7 +1,7 @@
 [project]
-name = "mcp-strava"
-version = "1.0.0"
-description = "Model Context Protocol server for Strava API integration"
+name = "strava-grokbot-bridge"
+version = "1.1.0"
+description = "GrokBot cloud-computer MCP bridge for a user's own Strava account (fork of eddmann/strava-mcp)"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
@@ -18,6 +18,11 @@ http = [
     "boto3>=1.34.0",  # For DynamoDB session storage
     "mangum>=0.17.0", # For AWS Lambda deployment
 ]
+
+[project.urls]
+Homepage = "https://github.com/naoiseirwin/strava-grokbot-bridge"
+Repository = "https://github.com/naoiseirwin/strava-grokbot-bridge"
+Upstream = "https://github.com/eddmann/strava-mcp"
 
 [project.scripts]
 mcp-strava = "strava_mcp.cli:main"

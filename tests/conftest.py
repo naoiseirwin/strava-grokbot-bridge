@@ -33,8 +33,9 @@ def respx_mock():
 
 
 @pytest.fixture(autouse=True)
-def mock_env_config(mock_config):
+def mock_env_config(mock_config, tmp_path):
     """Mock environment variables so config loads test credentials automatically."""
+    env_file = tmp_path / ".strava-mcp.env"
     env_vars = {
         "STRAVA_CLIENT_ID": mock_config.strava_client_id,
         "STRAVA_CLIENT_SECRET": mock_config.strava_client_secret,
@@ -42,6 +43,7 @@ def mock_env_config(mock_config):
         "STRAVA_REFRESH_TOKEN": mock_config.strava_refresh_token,
         "STRAVA_MEASUREMENT_PREFERENCE": mock_config.strava_measurement_preference,
         "ROUTE_EXPORT_PATH": mock_config.route_export_path,
+        "STRAVA_MCP_ENV_FILE": str(env_file),
     }
 
     with patch.dict(os.environ, env_vars, clear=False):

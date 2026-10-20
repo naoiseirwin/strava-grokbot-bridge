@@ -2,7 +2,7 @@
 .DEFAULT_GOAL := help
 
 SHELL := /bin/bash
-IMAGE_NAME := ghcr.io/eddmann/strava-mcp
+IMAGE_NAME := ghcr.io/naoiseirwin/strava-grokbot-bridge
 VERSION := $(shell grep '^version' pyproject.toml | cut -d '"' -f 2)
 
 ##@ Setup
@@ -107,7 +107,7 @@ deps/list: ## Show installed dependencies
 	@uv pip list
 
 info: ## Show project information
-	@echo "Project: strava-mcp"
+	@echo "Project: strava-grokbot-bridge"
 	@echo "Version: $(VERSION)"
 	@echo "Python: $$(python --version)"
 	@echo "Image: $(IMAGE_NAME)"
